@@ -2,6 +2,7 @@ const { Router } = require('express');
 const crypto = require('crypto');
 const redis = require('../redis');
 const { fetchTTS } = require('../services/tts');
+const { recordRequest } = require('../metrics');
 const { maxTextLength, cache } = require('../config');
 const logger = require('../logger');
 
@@ -13,6 +14,7 @@ function buildCacheKey(lang, text) {
 }
 
 router.get('/', async (req, res) => {
+    const start = Date.now();
     const { text, lang } = req.query;
 
     if (!text || !lang) {
@@ -28,9 +30,11 @@ router.get('/', async (req, res) => {
     try {
         const cached = await redis.getBuffer(cacheKey);
         if (cached) {
+            const durationMs = Date.now() - start;
             logger.debug({ cacheKey }, 'Cache HIT');
             res.setHeader('Content-Type', 'audio/mpeg');
             res.setHeader('X-Cache', 'HIT');
+            recordRequest({ text, lang, cacheHit: true, durationMs }).catch(() => {});
             return res.send(cached);
         }
     } catch (err) {
@@ -39,6 +43,7 @@ router.get('/', async (req, res) => {
 
     try {
         const { buffer, contentType } = await fetchTTS(decodeURIComponent(text), lang);
+        const durationMs = Date.now() - start;
 
         res.setHeader('Content-Type', contentType);
         res.setHeader('X-Cache', 'MISS');
@@ -50,6 +55,7 @@ router.get('/', async (req, res) => {
             logger.warn({ err: err.message }, 'Redis set error');
         }
 
+        recordRequest({ text, lang, cacheHit: false, durationMs }).catch(() => {});
         res.send(buffer);
     } catch (err) {
         if (err.type === 'request-timeout') {
