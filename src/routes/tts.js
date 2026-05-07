@@ -1,9 +1,16 @@
 const { Router } = require('express');
+const crypto = require('crypto');
 const redis = require('../redis');
 const { fetchTTS } = require('../services/tts');
 const { maxTextLength, cache } = require('../config');
+const logger = require('../logger');
 
 const router = Router();
+
+function buildCacheKey(lang, text) {
+    const hash = crypto.createHash('md5').update(`${lang}:${text}`).digest('hex');
+    return `${cache.prefix}:${hash}`;
+}
 
 router.get('/', async (req, res) => {
     const { text, lang } = req.query;
@@ -16,17 +23,18 @@ router.get('/', async (req, res) => {
         return res.status(400).send(`Text exceeds maximum length of ${maxTextLength} characters.`);
     }
 
-    const cacheKey = `${cache.prefix}:${lang}:${text}`;
+    const cacheKey = buildCacheKey(lang, text);
 
     try {
         const cached = await redis.getBuffer(cacheKey);
         if (cached) {
+            logger.debug({ cacheKey }, 'Cache HIT');
             res.setHeader('Content-Type', 'audio/mpeg');
             res.setHeader('X-Cache', 'HIT');
             return res.send(cached);
         }
     } catch (err) {
-        console.error('Redis get error:', err.message);
+        logger.warn({ err: err.message }, 'Redis get error');
     }
 
     try {
@@ -37,17 +45,19 @@ router.get('/', async (req, res) => {
 
         try {
             await redis.set(cacheKey, buffer, 'EX', cache.ttl);
+            logger.debug({ cacheKey }, 'Cache SET');
         } catch (err) {
-            console.error('Redis set error:', err.message);
+            logger.warn({ err: err.message }, 'Redis set error');
         }
 
         res.send(buffer);
     } catch (err) {
         if (err.type === 'request-timeout') {
+            logger.error('Upstream request timed out');
             return res.status(504).send('Upstream request timed out.');
         }
-        const status = err.status || 500;
-        res.status(status).send(err.message || 'Internal server error.');
+        logger.error({ err: err.message }, 'TTS fetch error');
+        res.status(err.status || 500).send(err.message || 'Internal server error.');
     }
 });
 

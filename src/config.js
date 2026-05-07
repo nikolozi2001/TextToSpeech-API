@@ -1,21 +1,39 @@
 require('dotenv').config();
 
+const { cleanEnv, port, str, num } = require('envalid');
+
+const env = cleanEnv(process.env, {
+    PORT:                  port({ default: 3000 }),
+    TTS_URL:               str({ default: 'https://ttsapi.tiflo.ge/tts.php' }),
+    REQUEST_TIMEOUT:       num({ default: 10_000 }),
+    RATE_LIMIT_WINDOW_MS:  num({ default: 60_000 }),
+    RATE_LIMIT_MAX:        num({ default: 100 }),
+    REDIS_HOST:            str({ default: '127.0.0.1' }),
+    REDIS_PORT:            port({ default: 6379 }),
+    REDIS_PASSWORD:        str({ default: '' }),
+    CACHE_TTL:             num({ default: 86400 }),
+    CACHE_PREFIX:          str({ default: 'tts' }),
+    LOG_LEVEL:             str({ default: 'info', choices: ['trace', 'debug', 'info', 'warn', 'error'] }),
+    NODE_ENV:              str({ default: 'development', choices: ['development', 'production', 'test'] }),
+});
+
 module.exports = {
-    port: parseInt(process.env.PORT) || 3000,
-    ttsUrl: process.env.TTS_URL || 'https://ttsapi.tiflo.ge/tts.php',
+    port: env.PORT,
+    ttsUrl: env.TTS_URL,
     maxTextLength: 2000,
-    requestTimeout: parseInt(process.env.REQUEST_TIMEOUT) || 10_000,
+    requestTimeout: env.REQUEST_TIMEOUT,
+    nodeEnv: env.NODE_ENV,
     cache: {
-        prefix: process.env.CACHE_PREFIX || 'tts',
-        ttl: parseInt(process.env.CACHE_TTL) || 86400,
+        prefix: env.CACHE_PREFIX,
+        ttl: env.CACHE_TTL,
     },
     redis: {
-        host: process.env.REDIS_HOST || '127.0.0.1',
-        port: parseInt(process.env.REDIS_PORT) || 6379,
-        password: process.env.REDIS_PASSWORD || undefined,
+        host: env.REDIS_HOST,
+        port: env.REDIS_PORT,
+        password: env.REDIS_PASSWORD || undefined,
     },
     rateLimit: {
-        windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60_000,
-        max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
+        windowMs: env.RATE_LIMIT_WINDOW_MS,
+        max: env.RATE_LIMIT_MAX,
     },
 };
