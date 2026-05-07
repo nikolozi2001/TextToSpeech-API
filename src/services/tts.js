@@ -4,9 +4,18 @@ const { ttsUrl, requestTimeout } = require('../config');
 
 const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
+function sanitizeText(text) {
+    return text
+        .replace(/(<([^>]+)>)/ig, '')  // strip HTML tags
+        .replace(/&[a-z]+;/ig, ' ')    // strip HTML entities (&amp; &nbsp; etc.)
+        .replace(/\s\s+/g, ' ')        // collapse whitespace
+        .trim();
+}
+
 async function fetchTTS(text, lang) {
+    const clean = sanitizeText(text);
     const isEnglish = lang === 'en';
-    const body = `t=${encodeURIComponent(text)}${isEnglish ? '&eng=true' : ''}`;
+    const body = `t=${encodeURIComponent(clean)}${isEnglish ? '&eng=true' : ''}`;
 
     const response = await fetch(ttsUrl, {
         method: 'POST',
