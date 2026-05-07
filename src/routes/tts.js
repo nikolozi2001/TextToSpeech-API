@@ -2,7 +2,7 @@ const { Router } = require('express');
 const crypto = require('crypto');
 const redis = require('../redis');
 const { fetchTTS } = require('../services/tts');
-const { recordRequest } = require('../metrics');
+const { recordRequest, recordError } = require('../metrics');
 const { maxTextLength, cache } = require('../config');
 const logger = require('../logger');
 
@@ -60,9 +60,11 @@ router.get('/', async (req, res) => {
     } catch (err) {
         if (err.type === 'request-timeout') {
             logger.error('Upstream request timed out');
+            recordError({ type: 'timeout', message: 'Upstream request timed out' }).catch(() => {});
             return res.status(504).send('Upstream request timed out.');
         }
         logger.error({ err: err.message }, 'TTS fetch error');
+        recordError({ type: 'upstream', message: err.message }).catch(() => {});
         res.status(err.status || 500).send(err.message || 'Internal server error.');
     }
 });
