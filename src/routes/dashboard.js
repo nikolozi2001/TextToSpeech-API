@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const redis = require('../redis');
-const { getStats, countCacheKeys, clearCacheKeys } = require('../metrics');
+const { getStats, countCacheKeys, clearCacheKeys, resetMetrics } = require('../metrics');
 const { rateLimit: rateLimitConfig } = require('../config');
 
 const router = Router();
@@ -80,6 +80,15 @@ router.post('/cache/clear', async (req, res) => {
     }
 });
 
+router.post('/metrics/reset', async (req, res) => {
+    try {
+        await resetMetrics();
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 router.get('/styles.css', (req, res) => {
     res.setHeader('Content-Type', 'text/css; charset=utf-8');
     res.send(STYLES);
@@ -154,6 +163,8 @@ canvas { display: block; width: 100%; border-radius: 0.25rem; }
 .top-bar { height: 100%; background: #3b82f6; border-radius: 999px; }
 .donut-legend { display: flex; gap: 1.5rem; justify-content: center; margin-top: 0.75rem; font-size: 0.8rem; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.legend-dot-blue  { background: #3b82f6; }
+.legend-dot-green { background: #22c55e; }
 @media (max-width: 1100px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 900px) { .grid-3 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; } main { padding: 1rem; } }
@@ -381,6 +392,18 @@ if (clearBtn) {
   });
 }
 
+var resetBtn = $('resetMetricsBtn');
+if (resetBtn) {
+  resetBtn.addEventListener('click', function() {
+    if (!confirm('სტატისტიკა გაუნულდება. გააგრძელებ?')) return;
+    resetBtn.disabled = true;
+    fetch('/dashboard/metrics/reset', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function() { resetBtn.disabled = false; })
+      .catch(function() { resetBtn.disabled = false; });
+  });
+}
+
 setupSSE();
 `;
 
@@ -392,12 +415,14 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TTS API Dashboard</title>
+<link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/dashboard/styles.css">
 </head>
 <body>
 <header>
   <h1>TTS API <span>Dashboard</span></h1>
   <div class="header-right">
+    <button class="btn btn-red" id="resetMetricsBtn">სტატისტიკის გასუფთავება</button>
     <span id="connDot"><span class="status-dot dot-amber"></span></span>
     <span id="connLabel">Connecting...</span>
   </div>
@@ -450,8 +475,8 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
       <canvas id="timelineChart"></canvas>
     </div>
     <div class="donut-legend">
-      <span><span class="legend-dot" style="background:#3b82f6"></span>სულ</span>
-      <span><span class="legend-dot" style="background:#22c55e"></span>HIT</span>
+      <span><span class="legend-dot legend-dot-blue"></span>სულ</span>
+      <span><span class="legend-dot legend-dot-green"></span>HIT</span>
     </div>
   </div>
 

@@ -122,4 +122,13 @@ async function clearCacheKeys() {
     return deleted;
 }
 
-module.exports = { recordRequest, recordError, getStats, countCacheKeys, clearCacheKeys };
+async function resetMetrics() {
+    await redis.del(
+        K.total, K.hits, K.misses,
+        K.hitTotalMs, K.hitCount, K.missTotalMs, K.missCount,
+        K.recent, K.timeline, K.top,
+        K.errTotal, K.errRecent
+    );
+}
+
+module.exports = { recordRequest, recordError, getStats, countCacheKeys, clearCacheKeys, resetMetrics };
