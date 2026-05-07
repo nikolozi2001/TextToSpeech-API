@@ -108,13 +108,13 @@ main { padding: 2rem; max-width: 1400px; margin: 0 auto; display: flex; flex-dir
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-.card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.25rem 1.5rem; }
-.card-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.5rem; }
-.card-label-lg { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.75rem; }
-.card-value { font-size: 2rem; font-weight: 700; color: #f1f5f9; line-height: 1; }
-.card-value-sm { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; line-height: 1; padding-top: 0.4rem; }
-.card-value-md { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; line-height: 1; }
-.card-sub { font-size: 0.8rem; color: #64748b; margin-top: 0.4rem; }
+.card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 0.75rem 1rem; }
+.card-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.35rem; }
+.card-label-lg { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.5rem; }
+.card-value { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; line-height: 1; }
+.card-value-sm { font-size: 1rem; font-weight: 700; color: #f1f5f9; line-height: 1; padding-top: 0.3rem; }
+.card-value-md { font-size: 1.2rem; font-weight: 700; color: #f1f5f9; line-height: 1; }
+.card-sub { font-size: 0.75rem; color: #64748b; margin-top: 0.3rem; }
 .card-value-green { color: #4ade80; }
 .card-value-red   { color: #f87171; }
 .card-value-blue  { color: #60a5fa; }
@@ -230,7 +230,6 @@ function updateUI(d) {
 
   // Charts
   drawTimeline(d.timeline);
-  drawDonut(d.requests.hits, d.requests.misses);
 
   // Top phrases
   var tp = $('topPhrases');
@@ -365,42 +364,6 @@ function drawTimeline(timeline) {
   });
 }
 
-function drawDonut(hits, misses) {
-  var canvas = $('donutChart');
-  if (!canvas) return;
-  var size = Math.min(canvas.parentElement.clientWidth, 180);
-  canvas.width = size; canvas.height = size;
-  var ctx = canvas.getContext('2d');
-  var cx = size/2, cy = size/2, r = size/2 - 8, inner = r * 0.58;
-  ctx.clearRect(0, 0, size, size);
-
-  var total = hits + misses;
-  if (total === 0) {
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
-    ctx.fillStyle = '#334155'; ctx.fill();
-    ctx.beginPath(); ctx.arc(cx, cy, inner, 0, Math.PI*2);
-    ctx.fillStyle = '#1e293b'; ctx.fill();
-    return;
-  }
-
-  var hitAngle = (hits / total) * Math.PI * 2;
-  var start = -Math.PI / 2;
-
-  ctx.beginPath(); ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, r, start, start + hitAngle);
-  ctx.closePath(); ctx.fillStyle = '#22c55e'; ctx.fill();
-
-  ctx.beginPath(); ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, r, start + hitAngle, start + Math.PI*2);
-  ctx.closePath(); ctx.fillStyle = '#ef4444'; ctx.fill();
-
-  ctx.beginPath(); ctx.arc(cx, cy, inner, 0, Math.PI*2);
-  ctx.fillStyle = '#1e293b'; ctx.fill();
-
-  ctx.fillStyle = '#f1f5f9'; ctx.font = 'bold 15px Segoe UI';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(Math.round(hits/total*100)+'%', cx, cy);
-}
 
 // ── Cache clear ───────────────────────────────────────────────────────────────
 var clearBtn = $('clearCacheBtn');
@@ -481,26 +444,14 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
     </div>
   </div>
 
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-label-lg">მოთხოვნები დროის მიხედვით</div>
-      <div class="chart-wrap">
-        <canvas id="timelineChart"></canvas>
-      </div>
-      <div class="donut-legend">
-        <span><span class="legend-dot" style="background:#3b82f6"></span>სულ</span>
-        <span><span class="legend-dot" style="background:#22c55e"></span>HIT</span>
-      </div>
+  <div class="card">
+    <div class="card-label-lg">მოთხოვნები დროის მიხედვით</div>
+    <div class="chart-wrap">
+      <canvas id="timelineChart"></canvas>
     </div>
-    <div class="card">
-      <div class="card-label-lg">HIT / MISS</div>
-      <div style="display:flex;justify-content:center;padding:0.5rem 0">
-        <canvas id="donutChart" width="160" height="160"></canvas>
-      </div>
-      <div class="donut-legend">
-        <span><span class="legend-dot" style="background:#22c55e"></span>HIT</span>
-        <span><span class="legend-dot" style="background:#ef4444"></span>MISS</span>
-      </div>
+    <div class="donut-legend">
+      <span><span class="legend-dot" style="background:#3b82f6"></span>სულ</span>
+      <span><span class="legend-dot" style="background:#22c55e"></span>HIT</span>
     </div>
   </div>
 
