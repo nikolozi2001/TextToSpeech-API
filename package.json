@@ -1,7 +1,7 @@
 {
   "name": "texttospeech-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "A lightweight proxy API for Georgian/English text-to-speech conversion",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
