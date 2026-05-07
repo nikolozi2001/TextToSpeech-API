@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -11,6 +12,7 @@ const dashboardRouter = require('./routes/dashboard');
 
 const app = express();
 
+app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use(helmet());
 app.use(cors());
 app.use(morgan('dev'));
