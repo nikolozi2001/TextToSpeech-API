@@ -48,7 +48,13 @@ router.get('/events', async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection',    'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.flushHeaders();
+
+    if (res.socket) {
+        res.socket.setNoDelay(true);
+        res.socket.setKeepAlive(true);
+    }
 
     sseClients.add(res);
 
