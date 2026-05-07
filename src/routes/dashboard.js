@@ -176,7 +176,12 @@ function setupSSE() {
     setHTML('connDot', '<span class="status-dot dot-green"></span>');
     setText('connLabel', 'Live');
   };
-  es.onmessage = function(e) { updateUI(JSON.parse(e.data)); };
+  es.onmessage = function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d && d.requests && d.redis) updateUI(d);
+    } catch (_) {}
+  };
   es.onerror = function() {
     sseConnected = false;
     setHTML('connDot', '<span class="status-dot dot-amber"></span>');
@@ -288,7 +293,7 @@ function drawTimeline(timeline) {
   var canvas = $('timelineChart');
   if (!canvas) return;
   canvas.width  = canvas.parentElement.clientWidth;
-  canvas.height = 180;
+  canvas.height = 90;
   var ctx = canvas.getContext('2d');
   var W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
