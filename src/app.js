@@ -13,7 +13,9 @@ const dashboardRouter = require('./routes/dashboard');
 const app = express();
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(cors());
 app.use(morgan('dev'));
 app.use(rateLimit({
