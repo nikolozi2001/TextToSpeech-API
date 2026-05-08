@@ -16,7 +16,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(morgan('dev'));
 app.use(rateLimit({
     ...rateLimitConfig,
